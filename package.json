@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc && vite build && cp public/_redirects dist/_redirects",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "serve": "serve -s dist -l 5178",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -24,11 +24,11 @@
     "@types/react-dom": "^18.2.17",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
     "@typescript-eslint/parser": "^6.14.0",
-    "@vitejs/plugin-react": "^4.2.1",
     "@vitejs/plugin-react-swc": "^4.3.0",
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "serve": "^14.2.6",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ngo-gps-app
+    env: node
+    buildCommand: npm run build
+    publishPath: dist
+    headers:
+      - source: /*
+        headers:
+          - X-Frame-Options: DENY
+          - X-Content-Type-Options: nosniff
+    routes:
+      - type: rewrite
+        source: /(.*)$
+        destination: /index.html
