@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Trophy, Bell, ShoppingBag, Layers, Map as MapIcon } from 'lucide-react';
+import { Trophy, Bell, ShoppingBag, Layers, Map as MapIcon, RefreshCw, MapPin } from 'lucide-react';
 import { mockEvents } from '../../lib/mockData';
 import LeafletMap from '../../components/LeafletMap';
 
@@ -13,6 +13,59 @@ export default function MapScreen() {
   const [scannedCheckpoints, setScannedCheckpoints] = useState<string[]>([]);
   const [totalScore, setTotalScore] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<'loading' | 'active' | 'error'>('loading');
+  const [gpsErrorMessage, setGpsErrorMessage] = useState('');
+
+  // Request GPS location
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGpsStatus('error');
+      setGpsErrorMessage('您的瀏覽器不支援定位功能');
+      // Use default location
+      setUserLocation({ lat: 22.2086, lng: 114.0299 });
+      return;
+    }
+
+    setGpsStatus('loading');
+    setGpsErrorMessage('');
+
+    // Get current position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setGpsStatus('active');
+        console.log('GPS Success:', position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        console.log('GPS Error code:', error.code, error.message);
+        setGpsStatus('error');
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setGpsErrorMessage('請允許瀏覽器使用您的位置權限');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setGpsErrorMessage('無法取得位置，請稍後再試');
+            break;
+          case error.TIMEOUT:
+            setGpsErrorMessage('定位超時，請稍後再試');
+            break;
+          default:
+            setGpsErrorMessage('定位服務暫時無法使用');
+        }
+
+        // Use default Cheung Chau location for demo
+        setUserLocation({ lat: 22.2086, lng: 114.0299 });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 10000
+      }
+    );
+  }, []);
 
   useEffect(() => {
     // Store current event ID for navigation back from QR scanner
@@ -32,12 +85,13 @@ export default function MapScreen() {
       setTotalScore(parseInt(storedScore));
     }
 
-    // Get user location with continuous tracking
+    // Request location on mount
+    requestLocation();
+
+    // Watch for location changes
+    let watchId: number | undefined;
     if (navigator.geolocation) {
-      setGpsStatus('loading');
-
-      // First get current position
-      navigator.geolocation.getCurrentPosition(
+      watchId = navigator.geolocation.watchPosition(
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
@@ -45,43 +99,25 @@ export default function MapScreen() {
           });
           setGpsStatus('active');
         },
-        (error) => {
-          console.log('Initial GPS error:', error.message);
-          setGpsStatus('error');
-          // Use default Cheung Chau location
-          setUserLocation({ lat: 22.2086, lng: 114.0299 });
+        () => {
+          // Silent fail for watch - we already have initial position
         },
-        { enableHighAccuracy: true, timeout: 15000 }
+        { enableHighAccuracy: true, maximumAge: 10000 }
       );
-
-      // Then watch for continuous updates
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-          setGpsStatus('active');
-        },
-        (error) => {
-          console.log('GPS watch error:', error.message);
-          setGpsStatus('error');
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-      );
-
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
-    } else {
-      setGpsStatus('error');
-      // Use default Cheung Chau location
-      setUserLocation({ lat: 22.2086, lng: 114.0299 });
     }
-  }, [eventId]);
+
+    return () => {
+      if (watchId !== undefined) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [eventId, requestLocation]);
 
   const handleCheckpointClick = (checkpointId: string) => {
-    // Navigate to checkpoint detail page with QR scan + photo
+    // Check if already scanned
+    if (scannedCheckpoints.includes(checkpointId)) {
+      return;
+    }
     navigate(`/checkpoint/${checkpointId}`);
   };
 
@@ -101,7 +137,6 @@ export default function MapScreen() {
             <h1 style={styles.title}>{event.name}</h1>
             <p style={styles.subtitle}>
               已完成 {scannedCount}/{event.checkpoints.length} 個簽碼
-              {gpsStatus === 'active' && ' • GPS定位中'}
             </p>
           </div>
         </div>
@@ -133,8 +168,22 @@ export default function MapScreen() {
 
       {/* GPS Status Banner */}
       {gpsStatus === 'error' && (
-        <div style={styles.gpsWarning}>
-          ⚠️ GPS定位失敗，請開啟位置權限或允許瀏覽器使用位置
+        <div style={styles.gpsErrorBanner}>
+          <div style={styles.gpsErrorContent}>
+            <AlertTriangle size={18} />
+            <span>{gpsErrorMessage || 'GPS定位失敗'}</span>
+          </div>
+          <button style={styles.retryButton} onClick={requestLocation}>
+            <RefreshCw size={14} />
+            重試
+          </button>
+        </div>
+      )}
+
+      {gpsStatus === 'loading' && (
+        <div style={styles.gpsLoadingBanner}>
+          <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} />
+          <span>正在取得您的位置...</span>
         </div>
       )}
 
@@ -212,14 +261,14 @@ export default function MapScreen() {
                     <p style={styles.checkpointNameEn}>{checkpoint.nameEn}</p>
                     <p style={styles.checkpointDesc}>{checkpoint.description}</p>
                   </div>
-                  {scanned && (
+                  {scanned ? (
                     <div style={styles.scannedBadge}>✅ 已完成</div>
-                  )}
-                  {distance !== null && (
+                  ) : distance !== null ? (
                     <div style={distance < 30 ? styles.nearbyInfo : styles.distanceInfo}>
-                      📍 {distance < 30 ? '您在簽碼範圍內！' : `距離 ${Math.round(distance)} 米`}
+                      <MapPin size={12} />
+                      {distance < 30 ? '您在簽碼範圍內！' : `距離 ${Math.round(distance)} 米`}
                     </div>
-                  )}
+                  ) : null}
                   {!scanned && (
                     <div style={styles.scanHint}>
                       點擊前往掃描
@@ -256,11 +305,18 @@ export default function MapScreen() {
           進度：{scannedCount}/{event.checkpoints.length} 完成
         </p>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Helper function to calculate distance between two coordinates (in meters)
+// Helper function
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3;
   const φ1 = lat1 * Math.PI / 180;
@@ -272,6 +328,32 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
           Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+// Icons used
+function AlertTriangle({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function Loader({ size, style }: { size: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={style}>
+      <line x1="12" y1="2" x2="12" y2="6" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" />
+      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
+      <line x1="2" y1="12" x2="6" y2="12" />
+      <line x1="18" y1="12" x2="22" y2="12" />
+      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" />
+      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
+    </svg>
+  );
 }
 
 const styles = {
@@ -289,11 +371,42 @@ const styles = {
     fontSize: '18px',
     color: '#6c757d'
   },
-  gpsWarning: {
-    background: 'rgba(245, 158, 11, 0.95)',
-    color: '#1a202c',
-    padding: '10px 16px',
-    textAlign: 'center' as const,
+  gpsErrorBanner: {
+    background: 'linear-gradient(135deg, #f6ad55 0%, #ed8936 100%)',
+    color: 'white',
+    padding: '12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    fontSize: '13px',
+    fontWeight: '600'
+  },
+  gpsErrorContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  retryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    color: 'white',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  gpsLoadingBanner: {
+    background: 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+    color: 'white',
+    padding: '12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
     fontSize: '13px',
     fontWeight: '600'
   },
@@ -401,7 +514,7 @@ const styles = {
     margin: '0 16px 20px'
   },
   mapContainer: {
-    height: '400px',
+    height: '450px',
     borderRadius: '20px',
     overflow: 'hidden',
     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
@@ -487,20 +600,26 @@ const styles = {
     borderRadius: '8px'
   },
   nearbyInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
     color: '#20c997',
     fontSize: '13px',
     fontWeight: '700',
-    textAlign: 'center' as const,
     padding: '8px',
     background: 'rgba(32, 201, 151, 0.15)',
     borderRadius: '8px',
     marginBottom: '8px'
   },
   distanceInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
     color: '#3b82f6',
     fontSize: '12px',
     fontWeight: '600',
-    textAlign: 'center' as const,
     marginBottom: '8px'
   },
   scanHint: {
