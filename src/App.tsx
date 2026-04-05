@@ -15,6 +15,7 @@ import CheckpointDetailScreen from './screens/user/CheckpointDetailScreen'
 import HostLoginScreen from './screens/host/HostLoginScreen'
 import HostDashboardScreen from './screens/host/HostDashboardScreen'
 import EventManagementScreen from './screens/host/EventManagementScreen'
+import CheckpointManagementScreen from './screens/host/CheckpointManagementScreen'
 import StoreManagementScreen from './screens/host/StoreManagementScreen'
 import UserScoresScreen from './screens/host/UserScoresScreen'
 import NoticeBoardManagementScreen from './screens/host/NoticeBoardManagementScreen'
@@ -39,6 +40,7 @@ function App() {
         <Route path="/host/login" element={<HostLoginScreen />} />
         <Route path="/host/dashboard" element={<HostDashboardScreen />} />
         <Route path="/host/events" element={<EventManagementScreen />} />
+        <Route path="/host/event/:eventId/checkpoints" element={<CheckpointManagementScreen />} />
         <Route path="/host/store" element={<StoreManagementScreen />} />
         <Route path="/host/users" element={<UserScoresScreen />} />
         <Route path="/host/notices" element={<NoticeBoardManagementScreen />} />

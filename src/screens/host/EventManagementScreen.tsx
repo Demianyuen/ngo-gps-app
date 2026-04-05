@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, ToggleRight, ToggleLeft } from 'lucide-react';
+import { ArrowLeft, Plus, ToggleRight, ToggleLeft, X } from 'lucide-react';
 import { mockEvents } from '../../lib/mockData';
 
 export default function EventManagementScreen() {
   const navigate = useNavigate();
   const [events, setEvents] = useState(mockEvents);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    name: '',
+    description: ''
+  });
 
   const toggleEventStatus = (eventId: string) => {
     setEvents(events.map(event =>
@@ -13,6 +18,27 @@ export default function EventManagementScreen() {
         ? { ...event, isActive: !event.isActive }
         : event
     ));
+  };
+
+  const handleCreateEvent = () => {
+    if (!newEvent.name.trim()) return;
+
+    const event = {
+      id: Date.now().toString(),
+      name: newEvent.name,
+      description: newEvent.description,
+      isActive: true,
+      checkpoints: []
+    };
+
+    setEvents([...events, event]);
+    setNewEvent({ name: '', description: '' });
+    setShowCreateModal(false);
+  };
+
+  const handleAddCheckpoint = (eventId: string) => {
+    // Navigate to checkpoint creation screen
+    navigate(`/host/event/${eventId}/checkpoints`);
   };
 
   return (
@@ -25,10 +51,66 @@ export default function EventManagementScreen() {
         <h1 style={styles.title}>活動管理</h1>
       </div>
 
-      <button style={styles.addBtn}>
+      <button style={styles.addBtn} onClick={() => setShowCreateModal(true)}>
         <Plus size={20} />
         創建新活動
       </button>
+
+      {showCreateModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowCreateModal(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>創建新活動</h2>
+              <button
+                style={styles.closeBtn}
+                onClick={() => setShowCreateModal(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={styles.modalBody}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>活動名稱 *</label>
+                <input
+                  type="text"
+                  style={styles.input}
+                  placeholder="例如：長洲島歷史文化探索"
+                  value={newEvent.name}
+                  onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>活動描述</label>
+                <textarea
+                  style={styles.textarea}
+                  placeholder="探索長洲島的歷史古蹟與自然美景，發現隱藏的寶藏！"
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div style={styles.modalFooter}>
+                <button
+                  style={styles.cancelBtn}
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  取消
+                </button>
+                <button
+                  style={styles.confirmBtn}
+                  onClick={handleCreateEvent}
+                  disabled={!newEvent.name.trim()}
+                >
+                  創建活動
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={styles.eventList}>
         {events.map((event) => (
@@ -57,7 +139,12 @@ export default function EventManagementScreen() {
                   <span style={styles.cpPoints}>+{checkpoint.points} 分</span>
                 </div>
               ))}
-              <button style={styles.addCpBtn}>+ 添加簽碼點</button>
+              <button
+                style={styles.addCpBtn}
+                onClick={() => handleAddCheckpoint(event.id)}
+              >
+                + 添加簽碼點
+              </button>
             </div>
           </div>
         ))}
@@ -184,5 +271,108 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '8px'
+  },
+  modalOverlay: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  },
+  modal: {
+    background: 'white',
+    borderRadius: '20px',
+    maxWidth: '500px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflowY: 'auto' as const,
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '24px',
+    borderBottom: '1px solid #e2e8f0'
+  },
+  modalTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1a202c',
+    margin: 0
+  },
+  closeBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#718096',
+    padding: '4px'
+  },
+  modalBody: {
+    padding: '24px'
+  },
+  formGroup: {
+    marginBottom: '20px'
+  },
+  label: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#2d3748',
+    marginBottom: '8px'
+  },
+  input: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    transition: 'border-color 0.2s',
+    outline: 'none'
+  },
+  textarea: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    resize: 'vertical' as const,
+    transition: 'border-color 0.2s',
+    outline: 'none'
+  },
+  modalFooter: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+    marginTop: '24px'
+  },
+  cancelBtn: {
+    padding: '12px 24px',
+    background: '#f8f9fa',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#4a5568',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  confirmBtn: {
+    padding: '12px 24px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    border: 'none',
+    borderRadius: '10px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    opacity: 1
   }
 };
