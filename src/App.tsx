@@ -9,6 +9,7 @@ import QRScannerScreen from './screens/user/QRScannerScreen'
 import ScoreScreen from './screens/user/ScoreScreen'
 import NoticeBoardScreen from './screens/user/NoticeBoardScreen'
 import RedemptionStoreScreen from './screens/user/RedemptionStoreScreen'
+import CheckpointDetailScreen from './screens/user/CheckpointDetailScreen'
 
 // Host Screens
 import HostLoginScreen from './screens/host/HostLoginScreen'
@@ -29,6 +30,7 @@ function App() {
         <Route path="/events" element={<EventSelectionScreen />} />
         <Route path="/map/:eventId" element={<MapScreen />} />
         <Route path="/scan/:checkpointId" element={<QRScannerScreen />} />
+        <Route path="/checkpoint/:checkpointId" element={<CheckpointDetailScreen />} />
         <Route path="/scores" element={<ScoreScreen />} />
         <Route path="/notices" element={<NoticeBoardScreen />} />
         <Route path="/store" element={<RedemptionStoreScreen />} />

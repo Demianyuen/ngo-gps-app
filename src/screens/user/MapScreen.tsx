@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trophy, Bell, ShoppingBag, Layers, Map as MapIcon } from 'lucide-react';
 import { mockEvents } from '../../lib/mockData';
-import InteractiveMap from '../../components/InteractiveMap';
+import LeafletMap from '../../components/LeafletMap';
 
 export default function MapScreen() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -12,6 +12,7 @@ export default function MapScreen() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>();
   const [scannedCheckpoints, setScannedCheckpoints] = useState<string[]>([]);
   const [totalScore, setTotalScore] = useState(0);
+  const [gpsStatus, setGpsStatus] = useState<'loading' | 'active' | 'error'>('loading');
 
   useEffect(() => {
     // Store current event ID for navigation back from QR scanner
@@ -24,35 +25,64 @@ export default function MapScreen() {
     const storedScore = localStorage.getItem('userScore');
 
     if (stored) {
-      const scanned = JSON.parse(stored);
-      setScannedCheckpoints(scanned);
+      setScannedCheckpoints(JSON.parse(stored));
     }
 
     if (storedScore) {
       setTotalScore(parseInt(storedScore));
     }
 
-    // Get user location
+    // Get user location with continuous tracking
     if (navigator.geolocation) {
+      setGpsStatus('loading');
+
+      // First get current position
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setGpsStatus('active');
         },
-        () => {
-          console.log('Geolocation not available');
-        }
+        (error) => {
+          console.log('Initial GPS error:', error.message);
+          setGpsStatus('error');
+          // Use default Cheung Chau location
+          setUserLocation({ lat: 22.2086, lng: 114.0299 });
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
       );
+
+      // Then watch for continuous updates
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setGpsStatus('active');
+        },
+        (error) => {
+          console.log('GPS watch error:', error.message);
+          setGpsStatus('error');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
+    } else {
+      setGpsStatus('error');
+      // Use default Cheung Chau location
+      setUserLocation({ lat: 22.2086, lng: 114.0299 });
     }
   }, [eventId]);
 
   const handleCheckpointClick = (checkpointId: string) => {
-    // Check if already scanned
-    if (scannedCheckpoints.includes(checkpointId)) {
-      // Already scanned - show message
-      return;
-    }
-    navigate(`/scan/${checkpointId}`);
+    // Navigate to checkpoint detail page with QR scan + photo
+    navigate(`/checkpoint/${checkpointId}`);
   };
 
   if (!event) return <div style={styles.loading}>載入中...</div>;
@@ -69,7 +99,10 @@ export default function MapScreen() {
           </button>
           <div style={styles.titleSection}>
             <h1 style={styles.title}>{event.name}</h1>
-            <p style={styles.subtitle}>已完成 {scannedCount}/{event.checkpoints.length} 個簽碼</p>
+            <p style={styles.subtitle}>
+              已完成 {scannedCount}/{event.checkpoints.length} 個簽碼
+              {gpsStatus === 'active' && ' • GPS定位中'}
+            </p>
           </div>
         </div>
 
@@ -97,6 +130,13 @@ export default function MapScreen() {
           </button>
         </div>
       </div>
+
+      {/* GPS Status Banner */}
+      {gpsStatus === 'error' && (
+        <div style={styles.gpsWarning}>
+          ⚠️ GPS定位失敗，請開啟位置權限或允許瀏覽器使用位置
+        </div>
+      )}
 
       {/* Quick Stats Bar */}
       <div style={styles.statsBar}>
@@ -129,7 +169,7 @@ export default function MapScreen() {
       <div style={styles.contentArea}>
         {viewMode === 'map' ? (
           <div style={styles.mapContainer}>
-            <InteractiveMap
+            <LeafletMap
               checkpoints={event.checkpoints.map(cp => ({
                 ...cp,
                 scanned: scannedCheckpoints.includes(cp.id)
@@ -137,15 +177,20 @@ export default function MapScreen() {
               userLocation={userLocation}
               onCheckpointClick={handleCheckpointClick}
             />
-            <div style={styles.mapTips}>
-              <p style={styles.mapTipText}>💡 點擊地圖上的標記前往掃描</p>
-              <p style={styles.mapTipText}>✅ 綠色 = 已完成 | ⚪ 白色 = 未完成</p>
-            </div>
           </div>
         ) : (
           <div style={styles.checkpointsList}>
             {event.checkpoints.map((checkpoint, index) => {
               const scanned = scannedCheckpoints.includes(checkpoint.id);
+              const distance = userLocation
+                ? calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    checkpoint.location.lat,
+                    checkpoint.location.lng
+                  )
+                : null;
+
               return (
                 <div
                   key={checkpoint.id}
@@ -170,21 +215,14 @@ export default function MapScreen() {
                   {scanned && (
                     <div style={styles.scannedBadge}>✅ 已完成</div>
                   )}
-                  {!scanned && userLocation && (
-                    <div style={styles.distanceInfo}>
-                      📍 距離你約 {Math.round(
-                        calculateDistance(
-                          userLocation.lat,
-                          userLocation.lng,
-                          checkpoint.location.lat,
-                          checkpoint.location.lng
-                        )
-                      )} 米
+                  {distance !== null && (
+                    <div style={distance < 30 ? styles.nearbyInfo : styles.distanceInfo}>
+                      📍 {distance < 30 ? '您在簽碼範圍內！' : `距離 ${Math.round(distance)} 米`}
                     </div>
                   )}
                   {!scanned && (
                     <div style={styles.scanHint}>
-                      點擊前往掃描 QR 碼
+                      點擊前往掃描
                     </div>
                   )}
                 </div>
@@ -224,17 +262,15 @@ export default function MapScreen() {
 
 // Helper function to calculate distance between two coordinates (in meters)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3; // Earth radius in meters
+  const R = 6371e3;
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
   const Δφ = (lat2 - lat1) * Math.PI / 180;
   const Δλ = (lon2 - lon1) * Math.PI / 180;
-
   const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
           Math.cos(φ1) * Math.cos(φ2) *
           Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
   return R * c;
 }
 
@@ -243,7 +279,7 @@ const styles = {
     minHeight: '100vh',
     background: '#f8f9fa',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif',
-    paddingBottom: '100px'
+    paddingBottom: '120px'
   },
   loading: {
     minHeight: '100vh',
@@ -252,6 +288,14 @@ const styles = {
     justifyContent: 'center',
     fontSize: '18px',
     color: '#6c757d'
+  },
+  gpsWarning: {
+    background: 'rgba(245, 158, 11, 0.95)',
+    color: '#1a202c',
+    padding: '10px 16px',
+    textAlign: 'center' as const,
+    fontSize: '13px',
+    fontWeight: '600'
   },
   header: {
     background: 'linear-gradient(135deg, #20c997 0%, #0ca678 100%)',
@@ -357,22 +401,11 @@ const styles = {
     margin: '0 16px 20px'
   },
   mapContainer: {
+    height: '400px',
     borderRadius: '20px',
     overflow: 'hidden',
     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
     background: 'white'
-  },
-  mapTips: {
-    background: 'rgba(32, 201, 151, 0.1)',
-    padding: '12px 16px',
-    borderTop: '1px solid #e9ecef'
-  },
-  mapTipText: {
-    fontSize: '12px',
-    color: '#0ca678',
-    fontWeight: '600',
-    margin: '4px 0',
-    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif'
   },
   checkpointsList: {
     display: 'flex',
@@ -452,6 +485,16 @@ const styles = {
     padding: '8px',
     background: 'rgba(32, 201, 151, 0.1)',
     borderRadius: '8px'
+  },
+  nearbyInfo: {
+    color: '#20c997',
+    fontSize: '13px',
+    fontWeight: '700',
+    textAlign: 'center' as const,
+    padding: '8px',
+    background: 'rgba(32, 201, 151, 0.15)',
+    borderRadius: '8px',
+    marginBottom: '8px'
   },
   distanceInfo: {
     color: '#3b82f6',
