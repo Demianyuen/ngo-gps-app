@@ -1,3 +1,6 @@
+/* Import Apple Design System */
+@import './styles/apple-design.css';
+
 * {
   margin: 0;
   padding: 0;
