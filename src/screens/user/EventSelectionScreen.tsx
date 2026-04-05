@@ -1,9 +1,19 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Users, Clock, ArrowRight } from 'lucide-react';
+import { MapPin, Users, Clock, ArrowRight, LogOut } from 'lucide-react';
 import { mockEvents } from '../../lib/mockData';
 
 export default function EventSelectionScreen() {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    if (confirm('確定要登出嗎？')) {
+      // Clear user data
+      localStorage.removeItem('ngo_user');
+      localStorage.removeItem('ngo_current_event');
+      // Navigate to login
+      navigate('/login');
+    }
+  };
 
   return (
     <div style={styles.container}>
@@ -12,6 +22,10 @@ export default function EventSelectionScreen() {
         <div style={styles.backBtn} onClick={() => navigate(-1)}>← 返回</div>
         <h1 style={styles.title}>選擇探索活動</h1>
         <p style={styles.subtitle}>選擇您想參加的定向活動</p>
+        <button style={styles.logoutBtn} onClick={handleLogout}>
+          <LogOut size={16} />
+          登出
+        </button>
       </div>
 
       {/* Events List */}
@@ -91,6 +105,22 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '600'
+  },
+  logoutBtn: {
+    position: 'absolute' as const,
+    right: '20px',
+    top: '24px',
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
   },
   title: {
     fontSize: '24px',
