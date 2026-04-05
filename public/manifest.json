@@ -1,0 +1,22 @@
+{
+  "name": "香港定向探索",
+  "short_name": "定向探索",
+  "description": "長洲島定向探索活動 - 收集簽碼換取紀念品",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#20c997",
+  "theme_color": "#20c997",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
