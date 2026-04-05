@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Users, Clock, ArrowRight, LogOut } from 'lucide-react';
+import { MapPin, Users, Clock, ArrowRight, LogOut, Trophy } from 'lucide-react';
 import { mockEvents } from '../../lib/mockData';
 
 export default function EventSelectionScreen() {
@@ -7,10 +7,8 @@ export default function EventSelectionScreen() {
 
   const handleLogout = () => {
     if (confirm('確定要登出嗎？')) {
-      // Clear user data
       localStorage.removeItem('ngo_user');
       localStorage.removeItem('ngo_current_event');
-      // Navigate to login
       navigate('/login');
     }
   };
@@ -19,13 +17,14 @@ export default function EventSelectionScreen() {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.backBtn} onClick={() => navigate(-1)}>← 返回</div>
-        <h1 style={styles.title}>選擇探索活動</h1>
-        <p style={styles.subtitle}>選擇您想參加的定向活動</p>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          <LogOut size={16} />
+        <button style={styles.logoutButton} onClick={handleLogout}>
+          <LogOut size={18} />
           登出
         </button>
+        <div style={styles.headerContent}>
+          <h1 style={styles.title}>選擇探索活動</h1>
+          <p style={styles.subtitle}>發現精彩旅程，探索文化寶藏</p>
+        </div>
       </div>
 
       {/* Events List */}
@@ -36,24 +35,23 @@ export default function EventSelectionScreen() {
             style={styles.eventCard}
             onClick={() => navigate(`/map/${event.id}`)}
           >
-            {/* Event Image Placeholder */}
-            <div style={styles.eventImage}>
-              <MapPin size={48} style={styles.eventIcon} />
-              {event.isActive && (
-                <span style={styles.activeBadge}>進行中</span>
-              )}
-            </div>
+            {/* Status Badge */}
+            {event.isActive && (
+              <div style={styles.activeBadge}>
+                進行中
+              </div>
+            )}
 
             {/* Event Info */}
             <div style={styles.eventInfo}>
-              <h2 style={styles.eventTitle}>{event.name}</h2>
+              <h2 style={styles.eventName}>{event.name}</h2>
               <p style={styles.eventDesc}>{event.description}</p>
 
-              {/* Event Stats */}
-              <div style={styles.eventStats}>
+              {/* Stats */}
+              <div style={styles.stats}>
                 <div style={styles.stat}>
                   <MapPin size={16} style={styles.statIcon} />
-                  <span style={styles.statText}>{event.checkpoints.length} 個簽碼</span>
+                  <span style={styles.statText}>{event.checkpoints.length} 個簽碼點</span>
                 </div>
                 <div style={styles.stat}>
                   <Users size={16} style={styles.statIcon} />
@@ -61,14 +59,22 @@ export default function EventSelectionScreen() {
                 </div>
                 <div style={styles.stat}>
                   <Clock size={16} style={styles.statIcon} />
-                  <span style={styles.statText}>進行中</span>
+                  <span style={styles.statText}>全天開放</span>
                 </div>
               </div>
 
-              {/* Join Button */}
-              <button style={styles.joinBtn}>
+              {/* Reward Preview */}
+              <div style={styles.rewardPreview}>
+                <Trophy size={14} style={styles.trophyIcon} />
+                <span style={styles.rewardText}>最高可獲得 120 積分</span>
+              </div>
+            </div>
+
+            {/* Action */}
+            <div style={styles.actionSection}>
+              <button style={styles.joinButton}>
                 立即參加
-                <ArrowRight size={18} style={styles.btnIcon} />
+                <ArrowRight size={18} style={styles.arrowIcon} />
               </button>
             </div>
           </div>
@@ -77,7 +83,7 @@ export default function EventSelectionScreen() {
 
       {/* Bottom Info */}
       <div style={styles.bottomInfo}>
-        <p style={styles.infoText}>完成探索後，可用積分換取紀念品</p>
+        <p style={styles.infoText}>完成探索後，可用積分兌換精美紀念品</p>
       </div>
     </div>
   );
@@ -86,113 +92,117 @@ export default function EventSelectionScreen() {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: '#f8f9fa',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif'
+    background: '#ffffff',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang TC", "Microsoft JhengHei", sans-serif',
+    paddingBottom: '80px'
   },
   header: {
-    background: 'linear-gradient(135deg, #20c997 0%, #0ca678 100%)',
-    color: 'white',
+    position: 'sticky' as const,
+    top: 0,
+    background: 'rgba(255, 255, 255, 0.94)',
+    backdropFilter: 'saturate(180%) blur(20px)',
+    borderBottom: '0.5px solid #e2e8f0',
     padding: '24px 20px',
-    textAlign: 'center' as const
+    zIndex: 100
   },
-  backBtn: {
-    position: 'absolute' as const,
-    left: '20px',
-    top: '24px',
-    background: 'rgba(255,255,255,0.2)',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600'
-  },
-  logoutBtn: {
+  logoutButton: {
     position: 'absolute' as const,
     right: '20px',
     top: '24px',
-    background: 'rgba(255,255,255,0.2)',
+    background: '#f5f5f7',
     border: 'none',
     padding: '8px 16px',
     borderRadius: '20px',
-    color: 'white',
-    cursor: 'pointer',
+    color: '#86868b',
     fontSize: '14px',
-    fontWeight: '600',
+    fontWeight: 600,
+    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: '6px'
+    gap: '6px',
+    transition: 'all 0.2s ease'
+  },
+  headerContent: {
+    maxWidth: '800px',
+    margin: '0 auto',
+    paddingTop: '40px'
   },
   title: {
-    fontSize: '24px',
-    fontWeight: '800',
-    marginBottom: '8px',
-    letterSpacing: '1px'
+    fontSize: '40px',
+    fontWeight: 600,
+    lineHeight: '1.10',
+    letterSpacing: 'normal',
+    color: '#1d1d1f',
+    margin: '0 0 8px 0',
+    textAlign: 'center' as const
   },
   subtitle: {
-    fontSize: '14px',
-    opacity: 0.9,
-    fontWeight: '500'
+    fontSize: '17px',
+    lineHeight: '1.47',
+    letterSpacing: '-0.374px',
+    color: '#86868b',
+    margin: 0,
+    textAlign: 'center' as const,
+    fontWeight: 400
   },
   eventsList: {
-    padding: '20px',
-    maxWidth: '600px',
-    margin: '0 auto'
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '40px 20px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '16px'
   },
   eventCard: {
-    background: 'white',
+    background: '#ffffff',
     borderRadius: '20px',
-    overflow: 'hidden',
-    marginBottom: '20px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+    padding: '24px',
+    boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+    border: '1px solid #f5f5f7',
     cursor: 'pointer',
-    transition: 'all 0.3s',
-    border: '1px solid #e9ecef'
-  },
-  eventImage: {
-    background: 'linear-gradient(135deg, #20c997 0%, #0ca678 100%)',
-    height: '140px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    transition: 'all 0.3s ease',
     position: 'relative' as const,
-    color: 'white'
-  },
-  eventIcon: {
-    opacity: 0.8
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '24px'
   },
   activeBadge: {
     position: 'absolute' as const,
-    top: '16px',
-    right: '16px',
-    background: 'rgba(255,255,255,0.95)',
-    color: '#0ca678',
-    padding: '6px 12px',
-    borderRadius: '20px',
+    top: '24px',
+    left: '24px',
+    background: 'rgba(52, 199, 89, 0.1)',
+    color: '#34c759',
+    padding: '4px 10px',
+    borderRadius: '12px',
     fontSize: '12px',
-    fontWeight: '700'
+    fontWeight: 600,
+    letterSpacing: '-0.12px'
   },
   eventInfo: {
-    padding: '20px'
+    flex: 1,
+    paddingLeft: '100px'
   },
-  eventTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1a202c',
-    marginBottom: '8px',
-    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif'
+  eventName: {
+    fontSize: '24px',
+    fontWeight: 700,
+    lineHeight: '1.19',
+    letterSpacing: '0.231px',
+    color: '#1d1d1f',
+    margin: '0 0 8px 0'
   },
   eventDesc: {
-    fontSize: '14px',
-    color: '#6c757d',
-    marginBottom: '16px',
-    lineHeight: '1.6',
-    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif'
+    fontSize: '15px',
+    lineHeight: '1.47',
+    letterSpacing: '-0.374px',
+    color: '#86868b',
+    margin: '0 0 16px 0',
+    fontWeight: 400
   },
-  eventStats: {
+  stats: {
     display: 'flex',
-    gap: '16px',
-    marginBottom: '20px',
-    flexWrap: 'wrap' as const
+    gap: '20px',
+    marginBottom: '16px'
   },
   stat: {
     display: 'flex',
@@ -200,42 +210,71 @@ const styles = {
     gap: '6px'
   },
   statIcon: {
-    color: '#20c997'
+    color: '#86868b'
   },
   statText: {
-    fontSize: '13px',
-    color: '#495057',
-    fontWeight: '500'
+    fontSize: '14px',
+    lineHeight: '1.29',
+    letterSpacing: '-0.224px',
+    color: '#86868b',
+    fontWeight: 500
   },
-  joinBtn: {
-    width: '100%',
-    padding: '14px',
-    background: 'linear-gradient(135deg, #20c997 0%, #0ca678 100%)',
-    border: 'none',
-    borderRadius: '12px',
-    color: 'white',
-    fontSize: '15px',
-    fontWeight: '700',
-    cursor: 'pointer',
+  rewardPreview: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif',
-    boxShadow: '0 4px 12px rgba(32, 201, 151, 0.3)'
+    gap: '6px',
+    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+    padding: '10px 16px',
+    borderRadius: '12px',
+    width: 'fit-content'
   },
-  btnIcon: {
-    marginLeft: '8px'
+  trophyIcon: {
+    color: '#667eea'
+  },
+  rewardText: {
+    fontSize: '13px',
+    lineHeight: '1.29',
+    letterSpacing: '-0.224px',
+    color: '#667eea',
+    fontWeight: 600
+  },
+  actionSection: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '8px'
+  },
+  joinButton: {
+    padding: '14px 28px',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    border: 'none',
+    borderRadius: '14px',
+    color: '#ffffff',
+    fontSize: '15px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    letterSpacing: '-0.224px',
+    whiteSpace: 'nowrap' as const
+  },
+  arrowIcon: {
+    transition: 'transform 0.2s ease'
   },
   bottomInfo: {
-    textAlign: 'center' as const,
-    padding: '20px',
-    background: 'white',
-    borderTop: '1px solid #e9ecef'
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '24px 20px'
   },
   infoText: {
     fontSize: '14px',
-    color: '#6c757d',
-    fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif'
+    lineHeight: '1.29',
+    letterSpacing: '-0.224px',
+    color: '#86868b',
+    margin: 0,
+    textAlign: 'center' as const,
+    fontWeight: 400
   }
 };
