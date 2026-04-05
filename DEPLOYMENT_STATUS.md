@@ -1,7 +1,7 @@
 # NGO GPS App 部署狀態
 
 ## GitHub 儲存庫 ✅
-- 私有儲存庫: https://github.com/Demianyuen/ngo-gps-app
+- 私有儲存庫: 已設為私有
 - 已推送到 GitHub
 - 所有提交已完成
 
@@ -24,7 +24,7 @@
 cd "C:\Users\user\Projects\NGO GPS"
 npm run dev -- --host
 ```
-然後在手機上訪問: http://192.168.8.125:5178
+然後在手機上訪問: [本地網絡IP]:5178 (在同一 WiFi 網絡下)
 
 #### 選項 2: 使用 Netlify 替代 ✅
 Netlify 對 SPA 路由支援更好：
@@ -49,7 +49,7 @@ netlify deploy --prod --dir=dist
 
 目前建議使用本地開發伺服器進行測試：
 - Local: http://localhost:5178
-- Network: http://192.168.8.125:5178
+- Network: [本地網絡IP]:5178 (在同一 WiFi 網絡下)
 
 可以讓客戶使用這個網址進行試用。
 

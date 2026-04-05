@@ -51,9 +51,9 @@ A Progressive Web App (PWA) for orienteering events organized by NGOs, allowing 
 - `src/` - Main app files
 
 ## Timeline
-- Complete first version in 2 weeks
-- Test in festival in late April
-- Budget: ~HK$15,000
+- First version completed and deployed
+- Testing phase in progress
+- Ready for production use
 
 ## Future
-Long-term cooperation for maintenance and future events.
+Ongoing maintenance and feature enhancements for future events.

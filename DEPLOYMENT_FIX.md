@@ -12,11 +12,11 @@ Vercel 部署保護 (Deployment Protection) 已啟用，導致：
 
 1. **登入 Vercel**
    - 開啟: https://vercel.com/dashboard
-   - 或直接: https://vercel.com/demianyuens-projects/ngo-gps-app/settings
+   - 或直接訪問項目設置頁面
 
 2. **找到部署保護設置**
    - 導航到: Settings → Deployment Protection
-   - 或直接: https://vercel.com/demianyuens-projects/ngo-gp s-app/settings/deployment-protection
+   - 或直接訪問項目的 deployment-protection 設置頁面
 
 3. **關閉部署保護**
    - 點擊 "Disable" 按鈕
@@ -42,7 +42,7 @@ vercel --prod
 #### Render.com (已配置好)
 1. 註冊: https://render.com
 2. 點擊 "New +" → "Web Service"
-3. 連接 GitHub 儲存庫: Demianyuen/ngo-gps-app
+3. 連接 GitHub 儲存庫
 4. 建置命令: `npm run build`
 5. 發布目錄: `dist`
 6. 點擊 "Deploy"
@@ -51,7 +51,7 @@ vercel --prod
 1. 註冊: https://app.netlify.com
 2. 點擊 "Add new site" → "Import an existing project"
 3. 選擇 GitHub
-4. 選擇 Demianyuen/ngo-gps-app
+4. 選擇項目儲存庫
 5. 建置命令: `npm run build`
 6. 發布目錄: `dist`
 7. 點擊 "Deploy site"
@@ -59,7 +59,7 @@ vercel --prod
 #### Cloudflare Pages
 1. 註冊: https://dash.cloudflare.com
 2. Pages → Create a project → Connect to Git
-3. 選擇 Demianyuen/ngo-gps-app
+3. 選擇項目儲存庫
 4. 設定:
    - Build command: `npm run build`
    - Build output directory: `dist`
@@ -74,7 +74,7 @@ cd "C:\Users\user\Projects\NGO GPS"
 npm run serve
 ```
 - 電腦: http://localhost:5178
-- 手機: http://192.168.8.125:5178
+- 手機: [本地網絡IP]:5178 (在同一 WiFi 網絡下)
 
 **優點:**
 - ✅ 立即可用，無需配置
@@ -95,5 +95,5 @@ npm run serve
 ## 聯絡支援
 
 如果遇到問題:
-- GitHub: https://github.com/Demianyuen/ngo-gps-app/issues
+- GitHub: 在項目儲存庫的 Issues 頁面提報問題
 - 確保 GitHub 儲存庫已設為私有
